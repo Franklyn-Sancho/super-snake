@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import GameBoard from '../GameBoard/GameBoard';
 import MenuScreen from '../MenuScreen/MenuScreen';
 
+import './Game.css';
+import GameEngine from '../GameEngine/GameEngine';
+import GameLayout from '../GameLayout/GameLayout';
+
 const Game = () => {
-    const [currentScreen, setCurrentScreen] = useState('menu'); // 'menu' ou 'game'
-    const [gameMode, setGameMode] = useState('classic'); // Modo padrão
+    const [currentScreen, setCurrentScreen] = useState('menu');
+    const [gameMode, setGameMode] = useState('classic');
 
     const startGame = (mode) => {
         setGameMode(mode);
@@ -21,7 +24,9 @@ const Game = () => {
                 <MenuScreen onStartGame={startGame} />
             )}
             {currentScreen === 'game' && (
-                <GameBoard gameMode={gameMode} onBackToMenu={backToMenu} />
+                <GameEngine mode={gameMode}>
+                    <GameLayout onBackToMenu={backToMenu} />
+                </GameEngine>
             )}
         </div>
     );

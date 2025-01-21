@@ -1,46 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './GameBoard.css'
-import Snake from '../Snake/Snake';
-import Food from '../Food/Food';
-import SpecialItems from '../SpecialItems/SpecialItems';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const GameBoard = ({gameMode, onBackToMenu}) => {
+const GameEngine = ({ children, mode }) => {
     const directionRef = useRef('RIGHT');
     const gameBoardRef = useRef(null);
     const snakeRef = useRef([[5, 5], [5, 6], [5, 7]]);
     const foodRef = useRef(null);
 
-
-    const getGridSize = () => {
+    const getGridSize = useCallback(() => {
         if (gameBoardRef.current) {
             const rect = gameBoardRef.current.getBoundingClientRect();
-            const cellSize = 20; // Size of each cell in pixels
+            const cellSize = 20;
             return {
                 width: Math.floor(rect.width / cellSize),
                 height: Math.floor(rect.height / cellSize)
             };
         }
         return { width: 20, height: 20 };
-    };
-
-    const generateFood = (snake) => {
-        let newFood;
+    }, []);
+    
+    const generateFoodPosition = useCallback((grid, snake) => {
+        const possiblePositions = [];
+        const foodPosition = { current: null };
+        
+        for (let i = 0; i < grid.height; i++) {
+            for (let j = 0; j < grid.width; j++) {
+                if (!snake.some(segment => segment[0] === i && segment[1] === j)) {
+                    possiblePositions.push([i, j]);
+                }
+            }
+        }
+        
+        foodPosition.current = possiblePositions[Math.floor(Math.random() * possiblePositions.length)];
+        return foodPosition.current;
+    }, []);
+    
+    const generateFood = useCallback((snake) => {
         const grid = getGridSize();
-        do {
-            newFood = [
-                Math.floor(Math.random() * grid.height),
-                Math.floor(Math.random() * grid.width),
-            ];
-        } while (snake.some(segment => segment[0] === newFood[0] && segment[1] === newFood[1]));
-        return newFood;
-    };
-
+        return generateFoodPosition(grid, snake);
+    }, [getGridSize, generateFoodPosition]);
 
     const initialSnake = [[5, 5], [5, 6], [5, 7]];
-    const [snake, setSnake] = useState(initialSnake);
+    const [snake, setSnake] = useState(snakeRef.current);
     const [food, setFood] = useState(() => generateFood(initialSnake));
-    const [gameOver, setGameOver] = useState(false);
     const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
     const [snakeSpeed, setSnakeSpeed] = useState(150);
     const [shake, setShake] = useState(false);
     const [snakeEffect, setSnakeEffect] = useState(false);
@@ -53,7 +56,7 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
         foodRef.current = food;
     }, [food]);
 
-    const resetGame = () => {
+    const resetGame = useCallback(() => {
         const currentGridSize = getGridSize();
         const centerY = Math.floor(currentGridSize.height / 2);
         const centerX = Math.floor(currentGridSize.width / 4);
@@ -74,14 +77,15 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
         setEffectType(null);
         setInvincible(false);
         setShake(false);
-    };
+    }, [generateFood, getGridSize]);
+    
 
-    const moveSnake = () => {
+    const moveSnake = useCallback(() => {
         const currentGridSize = getGridSize();
         const currentSnake = [...snakeRef.current];
         const head = currentSnake[currentSnake.length - 1];
         let newHead;
-
+    
         switch (directionRef.current) {
             case 'UP':
                 newHead = [head[0] - 1, head[1]];
@@ -96,13 +100,14 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
                 newHead = [head[0], head[1] + 1];
                 break;
             default:
-                return;
+                newHead = [head[0], head[1] + 1];
+                break;
         }
-
+    
         const ate = newHead[0] === foodRef.current[0] && newHead[1] === foodRef.current[1];
-
+    
         currentSnake.push(newHead);
-
+    
         if (ate) {
             setSnakeEffect(true);
             setFoodEffect(true);
@@ -110,33 +115,34 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
             setFood(newFood);
             setScore(prevScore => prevScore + 10);
             setSnakeSpeed(prevSpeed => Math.max(prevSpeed * 0.95, 50));
-
+    
             setTimeout(() => setFoodEffect(false), 300);
             setTimeout(() => setSnakeEffect(false), 500);
         } else {
             currentSnake.shift();
         }
-
+    
         const collidedWithWall =
             newHead[0] < 0 ||
             newHead[1] < 0 ||
             newHead[0] >= currentGridSize.height ||
             newHead[1] >= currentGridSize.width;
-
+    
         const collidedWithSelf = currentSnake
             .slice(0, -1)
             .some(segment => segment[0] === newHead[0] && segment[1] === newHead[1]);
-
+    
         if (!invincible && (collidedWithWall || collidedWithSelf)) {
             setGameOver(true);
             setShake(true);
             setTimeout(() => setShake(false), 500);
             return;
         }
-
+    
         snakeRef.current = currentSnake;
         setSnake(currentSnake);
-    };
+    }, [getGridSize, invincible, generateFood]);
+    
 
 
 
@@ -203,15 +209,14 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
         window.addEventListener('resize', handleResize);
         handleResize();
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [getGridSize]);
 
 
     useEffect(() => {
         if (gameOver) return;
-
         const interval = setInterval(moveSnake, snakeSpeed);
         return () => clearInterval(interval);
-    }, [snakeSpeed, gameOver]);
+    }, [snakeSpeed, gameOver, moveSnake]);
 
 
     useEffect(() => {
@@ -241,48 +246,29 @@ const GameBoard = ({gameMode, onBackToMenu}) => {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [gameOver]);
+    }, [gameOver, resetGame]);
 
-    return (
-        <div className={`game-container ${shake ? 'shake' : ''}`}>
-            <div className="game-area">
-                <h1>Snake Game</h1>
-                <p className="score">Score: {score}</p>
-                <div
-                    className="game-board"
-                    ref={gameBoardRef}
-                    style={{
-                        width: '100%',
-                        position: 'relative',
-                        margin: '0 auto'
-                    }}
-                >
-                    <Snake snake={snake} snakeEffect={snakeEffect} effectType={effectType} />
-                    <Food food={food} foodEffect={foodEffect} />
-                    <SpecialItems
-                        snake={snake}
-                        gridSize={gridSize}
-                        onCollectItem={handleSpecialItemEffect}
-                    />
-                </div>
 
-                {gameOver && (
-                    <div className="game-over-overlay">
-                        <div className="game-over-content">
-                            <h2>Game Over!</h2>
-                            <p>Score Final: {score}</p>
-                            <button onClick={resetGame} className="restart-button">
-                                Jogar Novamente
-                            </button>
-                            <p className="restart-hint">Pressione ENTER para reiniciar</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+    const gameProps = {
+        snake,
+        food,
+        score,
+        gameOver,
+        shake,
+        snakeEffect,
+        foodEffect,
+        effectType,
+        gridSize,
+        gameBoardRef,
+        resetGame,
+        handleSpecialItemEffect,
+        setGameOver,
+        setScore,
+    };
+
+    return React.Children.map(children, child =>
+        React.cloneElement(child, { gameProps, mode })
     );
 };
 
-/* export default GameBoard; */
-
-
+export default GameEngine;
