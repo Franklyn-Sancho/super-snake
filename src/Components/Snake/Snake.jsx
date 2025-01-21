@@ -1,7 +1,7 @@
 import React from 'react';
 import './Snake.css';
 
-const Snake = ({ snake, snakeEffect }) => {
+const Snake = ({ snake, snakeEffect, effectType }) => {
     // Gera o caminho SVG para a cobra
     const generatePath = (snake) => {
         return snake
@@ -16,8 +16,9 @@ const Snake = ({ snake, snakeEffect }) => {
         <svg width="400" height="400" className="snake-container">
             <path
                 d={generatePath(snake)}
-                className={`snake-body ${snakeEffect ? 'snake-effect' : ''}`} // Aplica o efeito na cobra
+                className={`snake-body ${snakeEffect ? `snake-effect ${effectType}` : ''}`} // Adiciona efeito e tipo dinamicamente
             />
+
         </svg>
     );
 };

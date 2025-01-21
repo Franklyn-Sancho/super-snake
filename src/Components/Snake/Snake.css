@@ -9,17 +9,29 @@
 
 .snake-body {
     fill: none;
-    stroke: #FFA500; 
+    stroke: #FFA500;
     stroke-width: 20;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: stroke 0.3s ease-out, stroke-width 0.3s ease-out; 
+    transition: stroke 0.3s ease-out, stroke-width 0.3s ease-out;
 }
 
 .snake-effect {
-    stroke: #ffff00; 
-    stroke-width: 25; 
+    stroke: #ffff00;
+    stroke-width: 25;
 }
 
+.snake-effect.invincibility {
+    stroke: #ff00ff;
+    filter: drop-shadow(0 0 5px #ff00ff);
+}
 
-  
+.snake-effect.boost {
+    stroke: #ffff00;
+    filter: drop-shadow(0 0 5px #ffff00);
+}
+
+.snake-effect.slow {
+    stroke: #00ffff;
+    filter: drop-shadow(0 0 5px #00ffff);
+}

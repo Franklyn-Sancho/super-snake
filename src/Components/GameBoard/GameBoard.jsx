@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GameBoard.css'
 import Snake from '../Snake/Snake';
 import Food from '../Food/Food';
+import SpecialItems from '../SpecialItems/SpecialItems';
 
 const GameBoard = () => {
-    
     const directionRef = useRef('RIGHT');
     const gameBoardRef = useRef(null);
     const snakeRef = useRef([[5, 5], [5, 6], [5, 7]]);
     const foodRef = useRef(null);
 
-    
+
     const getGridSize = () => {
         if (gameBoardRef.current) {
             const rect = gameBoardRef.current.getBoundingClientRect();
@@ -20,9 +20,9 @@ const GameBoard = () => {
                 height: Math.floor(rect.height / cellSize)
             };
         }
-        return { width: 20, height: 20 }; 
+        return { width: 20, height: 20 };
     };
-    
+
     const generateFood = (snake) => {
         let newFood;
         const grid = getGridSize();
@@ -35,7 +35,7 @@ const GameBoard = () => {
         return newFood;
     };
 
-    
+
     const initialSnake = [[5, 5], [5, 6], [5, 7]];
     const [snake, setSnake] = useState(initialSnake);
     const [food, setFood] = useState(() => generateFood(initialSnake));
@@ -46,35 +46,34 @@ const GameBoard = () => {
     const [snakeEffect, setSnakeEffect] = useState(false);
     const [foodEffect, setFoodEffect] = useState(false);
     const [gridSize, setGridSize] = useState(getGridSize());
+    const [invincible, setInvincible] = useState(false);
+    const [effectType, setEffectType] = useState(null);
 
-    
     useEffect(() => {
         foodRef.current = food;
     }, [food]);
 
     const resetGame = () => {
         const currentGridSize = getGridSize();
-        
         const centerY = Math.floor(currentGridSize.height / 2);
-        const centerX = Math.floor(currentGridSize.width / 4); // Start from left side of center
-
+        const centerX = Math.floor(currentGridSize.width / 4);
+    
         const initialSnake = [
             [centerY, centerX],
             [centerY, centerX + 1],
             [centerY, centerX + 2]
         ];
-
-        
+    
         setSnake(initialSnake);
         snakeRef.current = initialSnake;
         setFood(generateFood(initialSnake));
         setGameOver(false);
         setScore(0);
         setSnakeSpeed(150);
-        directionRef.current = 'RIGHT';
-        setShake(false);
         setSnakeEffect(false);
-        setFoodEffect(false);
+        setEffectType(null);
+        setInvincible(false);
+        setShake(false);
     };
 
     const moveSnake = () => {
@@ -128,7 +127,7 @@ const GameBoard = () => {
             .slice(0, -1)
             .some(segment => segment[0] === newHead[0] && segment[1] === newHead[1]);
 
-        if (collidedWithWall || collidedWithSelf) {
+        if (!invincible && (collidedWithWall || collidedWithSelf)) {
             setGameOver(true);
             setShake(true);
             setTimeout(() => setShake(false), 500);
@@ -139,13 +138,49 @@ const GameBoard = () => {
         setSnake(currentSnake);
     };
 
-    // Effect para atualizar o tamanho do grid
+
+
+    const handleSpecialItemEffect = (item) => {
+        switch (item.type) {
+            case 'boost':
+                setSnakeSpeed(80);
+                setSnakeEffect(true);
+                setEffectType('boost');
+                setTimeout(() => {
+                    setSnakeSpeed(150);
+                    setSnakeEffect(false);
+                    setEffectType(null);
+                }, 5000);
+                break;
+            case 'slow':
+                setSnakeSpeed(200);
+                setSnakeEffect(true);
+                setEffectType('slow');
+                setTimeout(() => {
+                    setSnakeSpeed(150);
+                    setSnakeEffect(false);
+                    setEffectType(null);
+                }, 5000);
+                break;
+            case 'invincibility':
+                setInvincible(true);
+                setSnakeEffect(true);
+                setEffectType('invincibility');
+                setTimeout(() => {
+                    setInvincible(false);
+                    setSnakeEffect(false);
+                    setEffectType(null);
+                }, 3000);
+                break;
+        }
+    };
+
     useEffect(() => {
         const handleResize = () => {
             const newSize = getGridSize();
             setGridSize(newSize);
 
-            
+
             const adjustedSnake = snakeRef.current.map(segment => [
                 Math.min(segment[0], newSize.height - 1),
                 Math.min(segment[1], newSize.width - 1)
@@ -154,7 +189,7 @@ const GameBoard = () => {
             setSnake(adjustedSnake);
             snakeRef.current = adjustedSnake;
 
-            
+
             if (foodRef.current) {
                 const newFood = [
                     Math.min(foodRef.current[0], newSize.height - 1),
@@ -166,11 +201,11 @@ const GameBoard = () => {
         };
 
         window.addEventListener('resize', handleResize);
-        handleResize(); 
+        handleResize();
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    
+
     useEffect(() => {
         if (gameOver) return;
 
@@ -178,7 +213,7 @@ const GameBoard = () => {
         return () => clearInterval(interval);
     }, [snakeSpeed, gameOver]);
 
-    
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (gameOver && e.key === 'Enter') {
@@ -222,8 +257,13 @@ const GameBoard = () => {
                         margin: '0 auto'
                     }}
                 >
-                    <Snake snake={snake} snakeEffect={snakeEffect} />
+                    <Snake snake={snake} snakeEffect={snakeEffect} effectType={effectType} />
                     <Food food={food} foodEffect={foodEffect} />
+                    <SpecialItems
+                        snake={snake}
+                        gridSize={gridSize}
+                        onCollectItem={handleSpecialItemEffect}
+                    />
                 </div>
 
                 {gameOver && (
