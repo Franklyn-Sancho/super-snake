@@ -1,0 +1,27 @@
+.gamescreen-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    font-family: Poppins, sans-serif;
+    width: 100%;
+    padding: 20px;
+    background-color: #1a1a1a;
+    gap: 20px;
+    text-align: center;
+}
+
+.gamescreen-content h1 {
+    font-size: 2.5rem;
+    color: #ffa500;
+}
+
+.gamescreen-content p {
+    font-size: 1.2rem;
+    color: #fff;
+}
+
+.gamescreen-content a {
+    text-decoration: none;
+}

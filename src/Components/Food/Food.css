@@ -1,0 +1,43 @@
+/* Estilo para a comida */
+.food {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: #32cd32;
+    /* Cor verde vibrante */
+    border-radius: 50%;
+    transition: opacity 0.3s ease-out, transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+    box-shadow: 0 0 10px 4px rgba(50, 205, 50, 0.7);
+    /* Brilho suave */
+    animation: pulse 1.5s infinite;
+    /* Animação de brilho pulsante */
+}
+
+/* Efeito de pulsação da comida */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 10px 4px rgba(50, 205, 50, 0.7);
+    }
+
+    50% {
+        transform: scale(1.1);
+        /* Aumenta o tamanho da comida */
+        box-shadow: 0 0 20px 6px rgba(50, 205, 50, 1);
+        /* Brilho mais forte */
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px 4px rgba(50, 205, 50, 0.7);
+        /* Retorna ao estado original */
+    }
+}
+
+/* Efeito de desaparecimento e reaparecimento quando a cobra comer */
+.food-effect {
+    opacity: 0;
+    /* Desaparece a comida */
+    animation: none;
+    /* Remove a animação de pulsação */
+}
