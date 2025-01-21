@@ -3,6 +3,7 @@ import GameBoard from '../../Components/GameBoard/GameBoard';
 import Button from '../../Components/Button/Button';
 import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 import './SnakePage.css';
+import Game from '../../Components/Game/Game';
 
 const SnakePage = () => {
     const navigate = useNavigate(); // Inicializar useNavigate
@@ -14,10 +15,7 @@ const SnakePage = () => {
     return (
         <div className="snake-page">
             <div className="game-area">
-                <GameBoard />
-                <div className="game-controls">
-                    <Button onClick={goBack}>Voltar para Início</Button>
-                </div>
+                <Game/>
             </div>
         </div>
     );

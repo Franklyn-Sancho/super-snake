@@ -4,7 +4,7 @@ import Snake from '../Snake/Snake';
 import Food from '../Food/Food';
 import SpecialItems from '../SpecialItems/SpecialItems';
 
-const GameBoard = () => {
+const GameBoard = ({gameMode, onBackToMenu}) => {
     const directionRef = useRef('RIGHT');
     const gameBoardRef = useRef(null);
     const snakeRef = useRef([[5, 5], [5, 6], [5, 7]]);
