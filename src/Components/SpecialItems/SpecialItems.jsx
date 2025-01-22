@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import './SpecialItems.css'
 
 const SpecialItems = ({ snake, onCollectItem, gridSize }) => {
-
     const [items, setItems] = useState([]);
 
-    const generateSpecialItems = () => {
+    const handleCollection = useCallback((item) => {
+        console.log('Item collected:', item); // Debug log
+        onCollectItem(item);
+        setItems(prevItems => prevItems.filter(i => i.id !== item.id));
+    }, [onCollectItem]);
+
+    const generateSpecialItems = useCallback(() => {
         const types = ['boost', 'slow', 'invincibility'];
         const randomType = types[Math.floor(Math.random() * types.length)];
         const randomPosition = [
@@ -13,7 +18,7 @@ const SpecialItems = ({ snake, onCollectItem, gridSize }) => {
             Math.floor(Math.random() * gridSize.width)
         ];
         return { type: randomType, position: randomPosition, id: Date.now() };
-    };
+    }, [gridSize]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -26,7 +31,7 @@ const SpecialItems = ({ snake, onCollectItem, gridSize }) => {
         }, 7000); // New item every 7 seconds
 
         return () => clearInterval(interval);
-    }, [gridSize]);
+    }, [generateSpecialItems]);
 
     useEffect(() => {
         const checkCollision = () => {
@@ -39,14 +44,7 @@ const SpecialItems = ({ snake, onCollectItem, gridSize }) => {
         };
 
         checkCollision();
-    }, [snake, items]);
-
-    const handleCollection = (item) => {
-        console.log('Item collected:', item); // Debug log
-        onCollectItem(item);
-        setItems(prevItems => prevItems.filter(i => i.id !== item.id));
-    };
-
+    }, [snake, items, handleCollection]);
 
     return (
         <>

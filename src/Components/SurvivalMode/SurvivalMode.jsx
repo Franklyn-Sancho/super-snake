@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import './SurvivalMode.css'
 import Obstacle from '../Obstacle/Obstacle';
 

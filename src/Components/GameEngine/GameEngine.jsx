@@ -164,51 +164,6 @@ const GameEngine = ({ children, mode }) => {
     }, [getGridSize, invincible, generateFood, mode, obstacles]);
 
 
-    const generateObstacle = useCallback(() => {
-        const grid = getGridSize();
-        const shapes = {
-            L: [[0, 0], [1, 0], [1, 1]],
-            line: [[0, 0], [0, 1], [0, 2]],
-            dot: [[0, 0]],
-            square: [[0, 0], [0, 1], [1, 0], [1, 1]]
-        };
-
-        const shapeTypes = Object.keys(shapes);
-        const selectedShape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
-
-        const basePosition = [
-            Math.floor(Math.random() * (grid.height - 2)),
-            Math.floor(Math.random() * (grid.width - 2))
-        ];
-
-        const positions = shapes[selectedShape].map(([y, x]) => [
-            basePosition[0] + y,
-            basePosition[1] + x
-        ]);
-
-        // Debug log
-        console.log('Attempting to generate obstacle:', {
-            shape: selectedShape,
-            positions,
-            gridSize: grid
-        });
-
-        if (positions.every(pos =>
-            pos[0] >= 0 && pos[0] < grid.height &&
-            pos[1] >= 0 && pos[1] < grid.width &&
-            !snake.some(segment =>
-                segment[0] === pos[0] && segment[1] === pos[1]
-            )
-        )) {
-            return {
-                id: Date.now(),
-                type: selectedShape,
-                positions: positions
-            };
-        }
-        return null;
-    }, [getGridSize, snake]);
-
 
     const handleDirectionChange = useCallback((key) => {
         const newDirection = (() => {
@@ -261,8 +216,12 @@ const GameEngine = ({ children, mode }) => {
                     setEffectType(null);
                 }, 3000);
                 break;
+            default:
+                console.warn('Tipo de item desconhecido:', item.type);
+                break;
         }
     };
+    
 
     useEffect(() => {
         const handleResize = () => {
@@ -389,7 +348,7 @@ const GameEngine = ({ children, mode }) => {
             activeTimeouts.forEach(timeout => clearTimeout(timeout));
             setObstacles([]);
         };
-    }, [mode, gameOver, getGridSize]);
+    }, [mode, gameOver, getGridSize, obstacles.length]);
 
 
     const gameProps = {

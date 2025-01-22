@@ -4,6 +4,7 @@ import Food from '../Food/Food';
 import SpecialItems from '../SpecialItems/SpecialItems';
 import SurvivalMode from '../SurvivalMode/SurvivalMode';
 import TouchControls from '../TouchControl/TouchControl';
+import './GameLayout.css'
 
 const GameLayout = ({ gameProps, mode }) => {
     const {
