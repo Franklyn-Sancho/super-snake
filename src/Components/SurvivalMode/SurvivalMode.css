@@ -1,11 +1,3 @@
-.obstacle {
-    position: absolute;
-    background: red;
-    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    animation: pulse 1s infinite;
-    z-index: 2;
-}
-
 .closing-wall {
     position: absolute;
     background: rgba(255, 0, 0, 0.3);

@@ -20,9 +20,7 @@ const Game = () => {
 
     return (
         <div className="game-container">
-            {currentScreen === 'menu' && (
-                <MenuScreen onStartGame={startGame} />
-            )}
+            {currentScreen === 'menu' && <MenuScreen onStartGame={startGame} />}
             {currentScreen === 'game' && (
                 <GameEngine mode={gameMode}>
                     <GameLayout onBackToMenu={backToMenu} />

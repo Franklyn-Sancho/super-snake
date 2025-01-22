@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+
+
 const GameEngine = ({ children, mode }) => {
     const directionRef = useRef('RIGHT');
     const gameBoardRef = useRef(null);
@@ -17,11 +19,11 @@ const GameEngine = ({ children, mode }) => {
         }
         return { width: 20, height: 20 };
     }, []);
-    
+
     const generateFoodPosition = useCallback((grid, snake) => {
         const possiblePositions = [];
         const foodPosition = { current: null };
-        
+
         for (let i = 0; i < grid.height; i++) {
             for (let j = 0; j < grid.width; j++) {
                 if (!snake.some(segment => segment[0] === i && segment[1] === j)) {
@@ -29,11 +31,11 @@ const GameEngine = ({ children, mode }) => {
                 }
             }
         }
-        
+
         foodPosition.current = possiblePositions[Math.floor(Math.random() * possiblePositions.length)];
         return foodPosition.current;
     }, []);
-    
+
     const generateFood = useCallback((snake) => {
         const grid = getGridSize();
         return generateFoodPosition(grid, snake);
@@ -51,6 +53,7 @@ const GameEngine = ({ children, mode }) => {
     const [gridSize, setGridSize] = useState(getGridSize());
     const [invincible, setInvincible] = useState(false);
     const [effectType, setEffectType] = useState(null);
+    const [obstacles, setObstacles] = useState([]);
 
     useEffect(() => {
         foodRef.current = food;
@@ -60,13 +63,13 @@ const GameEngine = ({ children, mode }) => {
         const currentGridSize = getGridSize();
         const centerY = Math.floor(currentGridSize.height / 2);
         const centerX = Math.floor(currentGridSize.width / 4);
-    
+
         const initialSnake = [
             [centerY, centerX],
             [centerY, centerX + 1],
             [centerY, centerX + 2]
         ];
-    
+
         setSnake(initialSnake);
         snakeRef.current = initialSnake;
         setFood(generateFood(initialSnake));
@@ -77,15 +80,16 @@ const GameEngine = ({ children, mode }) => {
         setEffectType(null);
         setInvincible(false);
         setShake(false);
+        setObstacles([]);
     }, [generateFood, getGridSize]);
-    
+
 
     const moveSnake = useCallback(() => {
         const currentGridSize = getGridSize();
         const currentSnake = [...snakeRef.current];
         const head = currentSnake[currentSnake.length - 1];
         let newHead;
-    
+
         switch (directionRef.current) {
             case 'UP':
                 newHead = [head[0] - 1, head[1]];
@@ -103,11 +107,27 @@ const GameEngine = ({ children, mode }) => {
                 newHead = [head[0], head[1] + 1];
                 break;
         }
-    
+
+        if (mode === 'survival' &&
+            obstacles.some(obs =>
+                newHead[0] === obs[0] && newHead[1] === obs[1]
+            )) {
+            setGameOver(true);
+            setShake(true);
+            setTimeout(() => setShake(false), 500);
+            return;
+        }
+
+        const collidedWithObstacle = mode === 'survival' && obstacles.some(obstacle =>
+            obstacle.positions.some(position =>
+                position[0] === newHead[0] && position[1] === newHead[1]
+            )
+        );
+
         const ate = newHead[0] === foodRef.current[0] && newHead[1] === foodRef.current[1];
-    
+
         currentSnake.push(newHead);
-    
+
         if (ate) {
             setSnakeEffect(true);
             setFoodEffect(true);
@@ -115,35 +135,98 @@ const GameEngine = ({ children, mode }) => {
             setFood(newFood);
             setScore(prevScore => prevScore + 10);
             setSnakeSpeed(prevSpeed => Math.max(prevSpeed * 0.95, 50));
-    
+
             setTimeout(() => setFoodEffect(false), 300);
             setTimeout(() => setSnakeEffect(false), 500);
         } else {
             currentSnake.shift();
         }
-    
+
         const collidedWithWall =
             newHead[0] < 0 ||
             newHead[1] < 0 ||
             newHead[0] >= currentGridSize.height ||
             newHead[1] >= currentGridSize.width;
-    
+
         const collidedWithSelf = currentSnake
             .slice(0, -1)
             .some(segment => segment[0] === newHead[0] && segment[1] === newHead[1]);
-    
-        if (!invincible && (collidedWithWall || collidedWithSelf)) {
+
+        if (!invincible && (collidedWithWall || collidedWithSelf || collidedWithObstacle)) {
             setGameOver(true);
             setShake(true);
             setTimeout(() => setShake(false), 500);
             return;
         }
-    
+
         snakeRef.current = currentSnake;
         setSnake(currentSnake);
-    }, [getGridSize, invincible, generateFood]);
-    
+    }, [getGridSize, invincible, generateFood, mode, obstacles]);
 
+
+    const generateObstacle = useCallback(() => {
+        const grid = getGridSize();
+        const shapes = {
+            L: [[0, 0], [1, 0], [1, 1]],
+            line: [[0, 0], [0, 1], [0, 2]],
+            dot: [[0, 0]],
+            square: [[0, 0], [0, 1], [1, 0], [1, 1]]
+        };
+
+        const shapeTypes = Object.keys(shapes);
+        const selectedShape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+
+        const basePosition = [
+            Math.floor(Math.random() * (grid.height - 2)),
+            Math.floor(Math.random() * (grid.width - 2))
+        ];
+
+        const positions = shapes[selectedShape].map(([y, x]) => [
+            basePosition[0] + y,
+            basePosition[1] + x
+        ]);
+
+        // Debug log
+        console.log('Attempting to generate obstacle:', {
+            shape: selectedShape,
+            positions,
+            gridSize: grid
+        });
+
+        if (positions.every(pos =>
+            pos[0] >= 0 && pos[0] < grid.height &&
+            pos[1] >= 0 && pos[1] < grid.width &&
+            !snake.some(segment =>
+                segment[0] === pos[0] && segment[1] === pos[1]
+            )
+        )) {
+            return {
+                id: Date.now(),
+                type: selectedShape,
+                positions: positions
+            };
+        }
+        return null;
+    }, [getGridSize, snake]);
+
+
+    const handleDirectionChange = useCallback((key) => {
+        const newDirection = (() => {
+            switch (key) {
+                case 'ArrowUp':
+                    return directionRef.current !== 'DOWN' ? 'UP' : directionRef.current;
+                case 'ArrowDown':
+                    return directionRef.current !== 'UP' ? 'DOWN' : directionRef.current;
+                case 'ArrowLeft':
+                    return directionRef.current !== 'RIGHT' ? 'LEFT' : directionRef.current;
+                case 'ArrowRight':
+                    return directionRef.current !== 'LEFT' ? 'RIGHT' : directionRef.current;
+                default:
+                    return directionRef.current;
+            }
+        })();
+        directionRef.current = newDirection;
+    }, []);
 
 
     const handleSpecialItemEffect = (item) => {
@@ -219,34 +302,94 @@ const GameEngine = ({ children, mode }) => {
     }, [snakeSpeed, gameOver, moveSnake]);
 
 
+    
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (gameOver && e.key === 'Enter') {
                 resetGame();
                 return;
             }
-
             e.preventDefault();
-            const newDirection = (() => {
-                switch (e.key) {
-                    case 'ArrowUp':
-                        return directionRef.current !== 'DOWN' ? 'UP' : directionRef.current;
-                    case 'ArrowDown':
-                        return directionRef.current !== 'UP' ? 'DOWN' : directionRef.current;
-                    case 'ArrowLeft':
-                        return directionRef.current !== 'RIGHT' ? 'LEFT' : directionRef.current;
-                    case 'ArrowRight':
-                        return directionRef.current !== 'LEFT' ? 'RIGHT' : directionRef.current;
-                    default:
-                        return directionRef.current;
-                }
-            })();
-            directionRef.current = newDirection;
+            handleDirectionChange(e.key);
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [gameOver, resetGame]);
+    }, [gameOver, resetGame, handleDirectionChange]);
+
+    // Update useEffect for obstacle generation
+    useEffect(() => {
+        if (mode !== 'survival' || gameOver) {
+            setObstacles([]);
+            return;
+        }
+
+        console.log('Survival mode active');
+
+        const maxObstacles = 3;
+        const generationDelay = 5000;
+        const obstacleLifetime = 8000;
+        let activeTimeouts = [];
+
+        const generateNewObstacle = () => {
+            const grid = getGridSize();
+            const shapes = {
+                L: [[0, 0], [1, 0], [1, 1]],
+                line: [[0, 0], [0, 1], [0, 2]],
+                dot: [[0, 0]],
+                square: [[0, 0], [0, 1], [1, 0], [1, 1]]
+            };
+
+            const shapeTypes = Object.keys(shapes);
+            const selectedShape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+
+            const basePosition = [
+                Math.floor(Math.random() * (grid.height - 2)),
+                Math.floor(Math.random() * (grid.width - 2))
+            ];
+
+            const positions = shapes[selectedShape].map(([y, x]) => [
+                basePosition[0] + y,
+                basePosition[1] + x
+            ]);
+
+            return {
+                id: Date.now(),
+                type: selectedShape,
+                positions: positions
+            };
+        };
+
+        const addObstacle = () => {
+            if (obstacles.length >= maxObstacles) return;
+
+            const newObstacle = generateNewObstacle();
+            console.log('Adding new obstacle:', newObstacle);
+
+            setObstacles(prev => {
+                const updated = [...prev, newObstacle];
+                console.log('Updated obstacles:', updated);
+                return updated;
+            });
+
+            const timeout = setTimeout(() => {
+                setObstacles(prev => prev.filter(obs => obs.id !== newObstacle.id));
+            }, obstacleLifetime);
+
+            activeTimeouts.push(timeout);
+        };
+
+        // Initial obstacle
+        addObstacle();
+
+        const interval = setInterval(addObstacle, generationDelay);
+
+        return () => {
+            clearInterval(interval);
+            activeTimeouts.forEach(timeout => clearTimeout(timeout));
+            setObstacles([]);
+        };
+    }, [mode, gameOver, getGridSize]);
 
 
     const gameProps = {
@@ -264,6 +407,9 @@ const GameEngine = ({ children, mode }) => {
         handleSpecialItemEffect,
         setGameOver,
         setScore,
+        obstacles,
+        setObstacles,
+        handleDirectionChange,
     };
 
     return React.Children.map(children, child =>

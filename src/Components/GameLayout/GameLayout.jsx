@@ -1,8 +1,9 @@
 import React from 'react';
-import Food from '../Food/Food';
 import Snake from '../Snake/Snake';
+import Food from '../Food/Food';
 import SpecialItems from '../SpecialItems/SpecialItems';
 import SurvivalMode from '../SurvivalMode/SurvivalMode';
+import TouchControls from '../TouchControl/TouchControl';
 
 const GameLayout = ({ gameProps, mode }) => {
     const {
@@ -17,8 +18,32 @@ const GameLayout = ({ gameProps, mode }) => {
         gridSize,
         gameBoardRef,
         resetGame,
-        handleSpecialItemEffect
+        handleSpecialItemEffect,
+        obstacles,
+        handleDirectionChange: changeDirection,
     } = gameProps;
+
+    const handleMove = (direction) => {
+        switch (direction) {
+            case 'up':
+                changeDirection('ArrowUp');
+                break;
+            case 'down':
+                changeDirection('ArrowDown');
+                break;
+            case 'left':
+                changeDirection('ArrowLeft');
+                break;
+            case 'right':
+                changeDirection('ArrowRight');
+                break;
+            case 'pause':
+                // Add pause logic here
+                break;
+            default:
+                break;
+        }
+    };
 
     return (
         <div className={`game-container ${shake ? 'shake' : ''}`}>
@@ -41,8 +66,18 @@ const GameLayout = ({ gameProps, mode }) => {
                         gridSize={gridSize}
                         onCollectItem={handleSpecialItemEffect}
                     />
+                    {mode === 'survival' && obstacles && obstacles.length > 0 && (
+                        <SurvivalMode
+                            gameProps={{
+                                ...gameProps,
+                                gridSize: {
+                                    ...gridSize,
+                                    cellSize: 20
+                                }
+                            }}
+                        />
+                    )}
                 </div>
-                 {mode === 'survival' && <SurvivalMode gameProps={gameProps}/>}
                 {gameOver && (
                     <div className="game-over-overlay">
                         <div className="game-over-content">
@@ -55,6 +90,7 @@ const GameLayout = ({ gameProps, mode }) => {
                         </div>
                     </div>
                 )}
+                <TouchControls onMove={handleMove} />
             </div>
         </div>
     );
